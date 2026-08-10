@@ -1,0 +1,6 @@
+{
+  "name": "桃園樂活用藥與健康知識題庫測驗器",
+  "description": "提供115年桃園市長者樂活用藥與健康知識競賽公開題庫隨機測驗、限時作答、即時成績統計與詳細檢討功能",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
