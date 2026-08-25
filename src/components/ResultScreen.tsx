@@ -15,7 +15,7 @@ interface ResultScreenProps {
   textSizeClass: string;
 }
 
-type FilterType = 'ALL' | 'WRONG' | 'CORRECT' | 'TIMED_OUT';
+type FilterType = 'ALL' | 'WRONG' | 'CORRECT';
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   result,
@@ -26,7 +26,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 }) => {
   const [reviewFilter, setReviewFilter] = useState<FilterType>('ALL');
 
-  const { score, correctCount, wrongCount, timedOutCount, totalQuestions, totalTimeSpentSeconds, userAnswers } = result;
+  const { score, correctCount, wrongCount, totalQuestions, totalTimeSpentSeconds, userAnswers } = result;
   const badgeInfo = getPerformanceBadge(score);
 
   // Trigger confetti for high score
@@ -47,13 +47,12 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   // Filter user answers for review
   const filteredAnswers = userAnswers.filter((item) => {
-    if (reviewFilter === 'WRONG') return !item.isCorrect && !item.timedOut;
+    if (reviewFilter === 'WRONG') return !item.isCorrect;
     if (reviewFilter === 'CORRECT') return item.isCorrect;
-    if (reviewFilter === 'TIMED_OUT') return item.timedOut;
     return true;
   });
 
-  const avgTimePerQuestion = Math.round(totalTimeSpentSeconds / totalQuestions);
+  const avgTimePerQuestion = Math.max(1, Math.round(totalTimeSpentSeconds / totalQuestions));
 
   return (
     <div className={`max-w-4xl mx-auto px-4 py-8 ${textSizeClass}`}>
@@ -107,25 +106,26 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             </div>
           </div>
 
-          <div className="p-3 text-center bg-orange-50 border-2 border-orange-200 rounded-2xl">
-            <div className="flex items-center justify-center space-x-1 text-orange-600 mb-1">
-              <Clock className="w-4 h-4" />
-              <span className="text-xs font-black">逾時未答</span>
-            </div>
-            <div className="text-2xl font-black text-orange-600">
-              {timedOutCount} <span className="text-xs text-slate-500 font-bold">題</span>
-            </div>
-          </div>
-
           <div className="p-3 text-center bg-indigo-50 border-2 border-indigo-200 rounded-2xl">
             <div className="flex items-center justify-center space-x-1 text-indigo-700 mb-1">
               <ShieldCheck className="w-4 h-4" />
-              <span className="text-xs font-black">總測驗時間</span>
+              <span className="text-xs font-black">總作答時間</span>
             </div>
             <div className="text-xl font-black text-indigo-950">
               {formatTime(totalTimeSpentSeconds)}
             </div>
-            <div className="text-[10px] text-indigo-700 font-bold">平均 {avgTimePerQuestion} 秒 / 題</div>
+            <div className="text-[10px] text-indigo-700 font-bold">累計完整答題時間</div>
+          </div>
+
+          <div className="p-3 text-center bg-amber-50 border-2 border-amber-200 rounded-2xl">
+            <div className="flex items-center justify-center space-x-1 text-amber-700 mb-1">
+              <Clock className="w-4 h-4" />
+              <span className="text-xs font-black">平均思考時間</span>
+            </div>
+            <div className="text-xl font-black text-amber-900">
+              {avgTimePerQuestion} <span className="text-xs font-bold text-slate-600">秒 / 題</span>
+            </div>
+            <div className="text-[10px] text-amber-700 font-bold">平均每題作答耗時</div>
           </div>
         </div>
       </div>
@@ -202,18 +202,6 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             >
               答對 ({correctCount})
             </button>
-            {timedOutCount > 0 && (
-              <button
-                onClick={() => setReviewFilter('TIMED_OUT')}
-                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                  reviewFilter === 'TIMED_OUT'
-                    ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-orange-600'
-                }`}
-              >
-                逾時未答 ({timedOutCount})
-              </button>
-            )}
           </div>
         </div>
 
@@ -226,7 +214,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         ) : (
           <div className="space-y-6">
             {filteredAnswers.map((item, index) => {
-              const { question, selectedOption, isCorrect, timedOut, timeSpentSeconds } = item;
+              const { question, selectedOption, isCorrect, timeSpentSeconds } = item;
 
               return (
                 <div
@@ -234,8 +222,6 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                   className={`rounded-2xl border-2 p-5 sm:p-6 transition-all ${
                     isCorrect
                       ? 'bg-emerald-50/50 border-emerald-200'
-                      : timedOut
-                      ? 'bg-orange-50/50 border-orange-200'
                       : 'bg-rose-50/50 border-rose-200'
                   }`}
                   id={`review-item-${index + 1}`}
@@ -252,16 +238,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs text-slate-500 font-medium">費時 {timeSpentSeconds} 秒</span>
+                      <span className="text-xs text-slate-500 font-medium">思考費時 {timeSpentSeconds} 秒</span>
                       {isCorrect ? (
                         <span className="bg-emerald-100 text-emerald-800 border-2 border-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-black flex items-center space-x-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>回答正確</span>
-                        </span>
-                      ) : timedOut ? (
-                        <span className="bg-orange-100 text-orange-800 border-2 border-orange-300 text-xs px-2.5 py-0.5 rounded-full font-black flex items-center space-x-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>逾時未答</span>
                         </span>
                       ) : (
                         <span className="bg-rose-100 text-rose-800 border-2 border-rose-300 text-xs px-2.5 py-0.5 rounded-full font-black flex items-center space-x-1">

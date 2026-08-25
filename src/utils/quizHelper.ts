@@ -41,6 +41,14 @@ export function formatTime(seconds: number): string {
   return `${mins} 分 ${secs} 秒`;
 }
 
+export function formatStopwatch(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const mStr = String(mins).padStart(2, '0');
+  const sStr = String(secs).padStart(2, '0');
+  return `${mStr}:${sStr}`;
+}
+
 export function getPerformanceBadge(score: number): {
   title: string;
   badge: string;

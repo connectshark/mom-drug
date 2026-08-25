@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Question, QuizConfig, UserAnswer, QuizResult } from '../types';
 import { SoundEffects, SpeechService } from '../utils/audio';
+import { formatStopwatch, formatTime } from '../utils/quizHelper';
 import { 
-  Timer, Volume2, Pause, Play, ChevronRight, 
-  HelpCircle, CheckCircle2, XCircle, ArrowRight, AlertTriangle 
+  Volume2, Pause, Play, ChevronRight, 
+  CheckCircle2, XCircle, Clock
 } from 'lucide-react';
 
 interface QuizScreenProps {
@@ -26,21 +27,41 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(config.timerDurationSeconds);
   const [isPaused, setIsPaused] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Complete stopwatch timer (正向計時)
+  const [totalElapsedSeconds, setTotalElapsedSeconds] = useState(0);
+  const [currentQuestionSeconds, setCurrentQuestionSeconds] = useState(0);
 
   // Store user answers
   const userAnswersRef = useRef<UserAnswer[]>([]);
   const currentQuestionStartTimeRef = useRef<number>(Date.now());
-  const timerIntervalRef = useRef<number | null>(null);
+  const stopwatchIntervalRef = useRef<number | null>(null);
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
 
+  // Real-time stopwatch ticking every second
+  useEffect(() => {
+    if (isPaused) {
+      if (stopwatchIntervalRef.current) clearInterval(stopwatchIntervalRef.current);
+      return;
+    }
+
+    stopwatchIntervalRef.current = window.setInterval(() => {
+      setTotalElapsedSeconds((prev) => prev + 1);
+      setCurrentQuestionSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (stopwatchIntervalRef.current) clearInterval(stopwatchIntervalRef.current);
+    };
+  }, [isPaused]);
+
   // Handle advancing to the next question or completing the quiz
   const handleNextQuestion = useCallback(
-    (chosenOption: number | null, timedOut: boolean = false) => {
+    (chosenOption: number | null) => {
       if (!currentQuestion) return;
 
       const timeSpent = Math.max(
@@ -51,9 +72,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
       const isCorrect = chosenOption === currentQuestion.answer;
 
       if (enableSound) {
-        if (timedOut) {
-          SoundEffects.playTimeUp();
-        } else if (isCorrect) {
+        if (isCorrect) {
           SoundEffects.playCorrect();
         } else {
           SoundEffects.playWrong();
@@ -65,7 +84,6 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         selectedOption: chosenOption,
         isCorrect,
         timeSpentSeconds: timeSpent,
-        timedOut,
       };
 
       userAnswersRef.current.push(answerRecord);
@@ -78,14 +96,13 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         setCurrentIndex((prev) => prev + 1);
         setSelectedOption(null);
         setIsAnswerSubmitted(false);
-        setTimeLeft(config.timerDurationSeconds);
+        setCurrentQuestionSeconds(0);
         currentQuestionStartTimeRef.current = Date.now();
       } else {
         // Quiz completed
         const answers = userAnswersRef.current;
         const correctCount = answers.filter((a) => a.isCorrect).length;
-        const wrongCount = answers.filter((a) => !a.isCorrect && !a.timedOut).length;
-        const timedOutCount = answers.filter((a) => a.timedOut).length;
+        const wrongCount = answers.filter((a) => !a.isCorrect).length;
         const score = Math.round((correctCount / totalQuestions) * 100);
         const totalTimeSpentSeconds = answers.reduce((acc, curr) => acc + curr.timeSpentSeconds, 0);
 
@@ -93,7 +110,6 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           totalQuestions,
           correctCount,
           wrongCount,
-          timedOutCount,
           score,
           totalTimeSpentSeconds,
           userAnswers: answers,
@@ -107,47 +123,10 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
       currentQuestion,
       currentIndex,
       totalQuestions,
-      config.timerDurationSeconds,
       enableSound,
       onFinishQuiz,
     ]
   );
-
-  // Timer countdown logic
-  useEffect(() => {
-    if (!config.enableTimer || isPaused || isAnswerSubmitted) {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      return;
-    }
-
-    timerIntervalRef.current = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-          handleNextQuestion(null, true);
-          return 0;
-        }
-
-        // Play tick sound for last 3 seconds
-        if (prev <= 4 && enableSound) {
-          SoundEffects.playTick();
-        }
-
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [
-    currentIndex,
-    config.enableTimer,
-    isPaused,
-    isAnswerSubmitted,
-    enableSound,
-    handleNextQuestion,
-  ]);
 
   // Handle option click
   const handleOptionSelect = (optionIndex: number) => {
@@ -160,7 +139,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
       setIsAnswerSubmitted(true);
     } else {
       // Direct submit in exam mode
-      handleNextQuestion(optionIndex, false);
+      handleNextQuestion(optionIndex);
     }
   };
 
@@ -182,16 +161,12 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
     SpeechService.speak(textToRead, () => setIsSpeaking(false));
   };
 
-  // Timer Percentage calculation
-  const timerPercent = config.enableTimer
-    ? (timeLeft / config.timerDurationSeconds) * 100
-    : 100;
-
   return (
     <div className={`max-w-3xl mx-auto px-4 py-6 ${textSizeClass}`}>
-      {/* Top Header Bar: Progress & Pause */}
+      {/* Top Header Bar: Progress, Elapsed Stopwatch & Controls */}
       <div className="bg-white rounded-3xl shadow-md border-2 border-indigo-100 p-4 sm:p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          {/* Category Badges */}
           <div className="flex items-center space-x-2">
             <span className="bg-indigo-100 text-indigo-800 text-xs sm:text-sm font-black px-3 py-1 rounded-full">
               {currentQuestion.mainCategory}
@@ -201,8 +176,19 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             </span>
           </div>
 
+          {/* Real-Time Answering Stopwatch Badge */}
+          <div className="flex items-center space-x-2 bg-indigo-50 border-2 border-indigo-200 px-3.5 py-1 rounded-2xl text-indigo-950 shadow-xs">
+            <Clock className="w-4 h-4 text-indigo-600 animate-pulse shrink-0" />
+            <span className="text-xs sm:text-sm font-black">
+              作答計時：<strong className="text-indigo-700 text-sm sm:text-base font-black">{formatStopwatch(totalElapsedSeconds)}</strong>
+            </span>
+            <span className="text-slate-400 text-xs font-bold hidden sm:inline">
+              (本題 {currentQuestionSeconds}秒)
+            </span>
+          </div>
+
           {/* Pause & Reading Controls */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 ml-auto sm:ml-0">
             <button
               onClick={handleReadAloud}
               className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1 border-2 transition-all cursor-pointer ${
@@ -217,16 +203,14 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               <span>{isSpeaking ? '朗讀中...' : '朗讀題干'}</span>
             </button>
 
-            {config.enableTimer && (
-              <button
-                onClick={() => setIsPaused(!isPaused)}
-                className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border-2 border-slate-200 cursor-pointer"
-                title={isPaused ? '繼續' : '暫停'}
-                id="btn-pause-quiz"
-              >
-                {isPaused ? <Play className="w-4 h-4 text-indigo-600" /> : <Pause className="w-4 h-4" />}
-              </button>
-            )}
+            <button
+              onClick={() => setIsPaused(!isPaused)}
+              className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border-2 border-slate-200 cursor-pointer"
+              title={isPaused ? '繼續' : '暫停'}
+              id="btn-pause-quiz"
+            >
+              {isPaused ? <Play className="w-4 h-4 text-indigo-600" /> : <Pause className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
@@ -245,31 +229,6 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             />
           </div>
         </div>
-
-        {/* Countdown Timer Bar if Enabled */}
-        {config.enableTimer && (
-          <div className="mt-4 pt-3 border-t-2 border-slate-100 flex items-center space-x-3">
-            <Timer className={`w-5 h-5 ${timeLeft <= 3 ? 'text-rose-500 animate-bounce' : 'text-orange-500'}`} />
-            <div className="flex-1">
-              <div className="flex justify-between items-center text-xs font-black mb-1">
-                <span className={timeLeft <= 3 ? 'text-rose-600 font-black' : 'text-slate-600'}>
-                  {timeLeft <= 3 ? '⚠️ 時間快到了！' : '本題剩餘時間'}
-                </span>
-                <span className={`text-sm font-black ${timeLeft <= 3 ? 'text-rose-600 text-base' : 'text-orange-600'}`}>
-                  {timeLeft} 秒
-                </span>
-              </div>
-              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                <div
-                  className={`h-full transition-all duration-1000 ${
-                    timeLeft <= 3 ? 'bg-rose-500' : timeLeft <= 5 ? 'bg-orange-500' : 'bg-indigo-600'
-                  }`}
-                  style={{ width: `${timerPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Paused Modal Overlay */}
@@ -278,7 +237,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border-4 border-indigo-100">
             <Pause className="w-12 h-12 text-indigo-600 mx-auto" />
             <h3 className="text-xl font-black text-slate-800">測驗已暫停</h3>
-            <p className="text-sm text-slate-600 font-medium">計時已凍結，準備好時點選下方按鈕繼續作答。</p>
+            <p className="text-sm text-slate-600 font-medium">答題計時已凍結，準備好時點選下方按鈕繼續作答。</p>
             <div className="pt-2 space-y-2">
               <button
                 onClick={() => setIsPaused(false)}
@@ -390,7 +349,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             </div>
 
             <button
-              onClick={() => handleNextQuestion(selectedOption, false)}
+              onClick={() => handleNextQuestion(selectedOption)}
               className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-md shadow-indigo-200 flex items-center justify-center space-x-2 transition-colors cursor-pointer"
               id="btn-next-question"
             >

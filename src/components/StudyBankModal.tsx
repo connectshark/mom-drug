@@ -133,9 +133,9 @@ export const StudyBankModal: React.FC<StudyBankModalProps> = ({
               className="px-3 py-2 border-2 border-slate-300 rounded-xl text-sm bg-white font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               id="select-main-cat"
             >
-              <option value="ALL">全部大類 (175題)</option>
-              <option value="藥品主題">一、藥品主題 (103題)</option>
-              <option value="衛生局政令宣導">二、政令宣導主題 (72題)</option>
+              <option value="ALL">全部大類 ({QUESTIONS_DATA.length}題)</option>
+              <option value="藥品主題">一、藥品主題 (101題)</option>
+              <option value="衛生局政令宣導">二、政令宣導主題 (71題)</option>
             </select>
 
             {/* Sub Category Dropdown if 政令宣導 */}
@@ -146,7 +146,7 @@ export const StudyBankModal: React.FC<StudyBankModalProps> = ({
                 className="px-3 py-2 border-2 border-slate-300 rounded-xl text-sm bg-white font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 id="select-sub-cat"
               >
-                <option value="ALL">全部子主題 (72題)</option>
+                <option value="ALL">全部子主題 (71題)</option>
                 <option value="心理健康">心理健康</option>
                 <option value="長照">長照服務</option>
                 <option value="食安">食品安全</option>

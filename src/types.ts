@@ -24,24 +24,22 @@ export interface QuizConfig {
   mainCategoryFilter: 'ALL' | MainCategory;
   subCategoryFilter: 'ALL' | SubCategory;
   questionCount: number; // default 5
-  enableTimer: boolean; // default true
-  timerDurationSeconds: number; // default 10
   showInstantAnswer: boolean; // default false (exam mode) or true
 }
 
 export interface UserAnswer {
   question: Question;
-  selectedOption: number | null; // 1, 2, 3, 4, or null if timed out/skipped
+  selectedOption: number | null; // 1, 2, 3, 4
   isCorrect: boolean;
   timeSpentSeconds: number;
-  timedOut: boolean;
+  timedOut?: boolean;
 }
 
 export interface QuizResult {
   totalQuestions: number;
   correctCount: number;
   wrongCount: number;
-  timedOutCount: number;
+  timedOutCount?: number;
   score: number; // 0 - 100
   totalTimeSpentSeconds: number;
   userAnswers: UserAnswer[];
@@ -49,3 +47,4 @@ export interface QuizResult {
 }
 
 export type AppMode = 'CONFIG' | 'QUIZ' | 'RESULT' | 'STUDY_BANK';
+

@@ -12,13 +12,11 @@ export default function App() {
   const [textSize, setTextSize] = useState<'normal' | 'large' | 'xlarge'>('large'); // Default 'large' for senior readability
   const [enableSound, setEnableSound] = useState<boolean>(true);
 
-  // Default quiz settings: 10s timer enabled, 5 questions
+  // Default quiz settings: 5 questions, complete timing mode
   const [config, setConfig] = useState<QuizConfig>({
     mainCategoryFilter: 'ALL',
     subCategoryFilter: 'ALL',
-    questionCount: 5, // Default 5 questions as required
-    enableTimer: true, // Default 10s timer enabled as requested
-    timerDurationSeconds: 10, // Default 10s
+    questionCount: 5, // Default 5 questions
     showInstantAnswer: false, // Default exam mode with final review
   });
 
@@ -106,7 +104,7 @@ export default function App() {
       <footer className="bg-white border-t-4 border-indigo-100 py-4 text-center text-xs text-slate-500 font-medium shadow-sm">
         <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>115 年桃園市長者樂活用藥與健康知識競賽題庫測驗器</span>
-          <span>資料來源：桃園市政府衛生局 公開題庫 (175題)</span>
+          <span>資料來源：桃園市政府衛生局 公開題庫 (172題)</span>
         </div>
       </footer>
 

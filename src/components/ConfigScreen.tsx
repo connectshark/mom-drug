@@ -55,7 +55,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
             隨機抽題測驗與練習產生器
           </h2>
           <p className="text-indigo-100/90 text-sm sm:text-base leading-relaxed max-w-2xl font-medium">
-            收錄全庫共 <strong className="text-amber-300 font-extrabold">{QUESTIONS_DATA.length} 題</strong> 官方標準宣導單選題。您可以自訂抽取題數與 10 秒限時挑戰，隨時自我測驗、即時統計成績並進行深度答題檢討！
+            收錄全庫共 <strong className="text-amber-300 font-extrabold">{QUESTIONS_DATA.length} 題</strong> 官方審核標準單選題。您可以自訂抽取題數，系統全程提供完整的答題計時與各題思考耗時統計，隨時自我測驗並進行深度檢討！
           </p>
         </div>
       </div>
@@ -91,7 +91,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
                 <span className="text-base font-bold">全部主題題庫</span>
                 {config.mainCategoryFilter === 'ALL' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
               </div>
-              <p className="text-xs text-slate-500 font-medium">包含藥品安全與衛生局政令宣導全 175 題</p>
+              <p className="text-xs text-slate-500 font-medium">包含藥品安全與衛生局政令宣導全 172 題</p>
             </button>
 
             <button
@@ -108,7 +108,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
                 <span className="text-base font-bold">一、藥品主題</span>
                 {config.mainCategoryFilter === '藥品主題' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
               </div>
-              <p className="text-xs text-slate-500 font-medium">中西藥併用、慢性病藥駕、保存等 103 題</p>
+              <p className="text-xs text-slate-500 font-medium">中西藥併用、慢性病藥駕、保存等 101 題</p>
             </button>
 
             <button
@@ -125,7 +125,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
                 <span className="text-base font-bold">二、政令宣導主題</span>
                 {config.mainCategoryFilter === '衛生局政令宣導' && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
               </div>
-              <p className="text-xs text-slate-500 font-medium">心理健康、食安、長照、疾病防治 72 題</p>
+              <p className="text-xs text-slate-500 font-medium">心理健康、食安、長照、疾病防治 71 題</p>
             </button>
           </div>
 
@@ -142,7 +142,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
                       : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  政令全題 (72題)
+                  政令全題 (71題)
                 </button>
                 {(['心理健康', '長照', '食安', '疾病防治', '健康促進', '其他'] as SubCategory[]).map((sub) => (
                   <button
@@ -227,66 +227,39 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
           </div>
         </div>
 
-        {/* Section 3: Countdown Timer & Exam Mode Settings */}
+        {/* Section 3: Timer & Exam Mode Settings */}
         <div>
           <div className="flex items-center space-x-2 text-slate-800 font-black text-lg mb-4 border-b-2 border-slate-100 pb-2">
             <span className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-sm font-black shadow-sm">
               3
             </span>
-            <h3>計時與作答模式設定</h3>
+            <h3>作答計時與模式設定</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Timer Toggle Card */}
-            <div className="bg-orange-50/90 border-2 border-orange-200 rounded-2xl p-4 flex flex-col justify-between">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-2 text-orange-900 font-black">
-                  <Timer className="w-5 h-5 text-orange-500" />
-                  <span>每題限時倒數作答</span>
+            {/* Timing Mode Card */}
+            <div className="bg-indigo-50/90 border-2 border-indigo-200 rounded-2xl p-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center space-x-2 text-indigo-950 font-black mb-2">
+                  <Clock className="w-5 h-5 text-indigo-600" />
+                  <span>完整答題計時模式 (無倒數壓力)</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.enableTimer}
-                    onChange={(e) => setConfig((prev) => ({ ...prev, enableTimer: e.target.checked }))}
-                    className="sr-only peer"
-                    id="toggle-timer-enabled"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500" />
-                </label>
+                <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed mb-3">
+                  測驗將全程正向累計總答題時間與各題思考秒數。不設每題倒數限制，讓長輩能夠從容看題、安心作答！
+                </p>
               </div>
 
-              {config.enableTimer ? (
-                <div>
-                  <p className="text-xs text-orange-900 font-medium mb-2">預設每題倒數 10 秒（逾時自動跳下一題）：</p>
-                  <div className="flex space-x-2">
-                    {[5, 10, 15, 30].map((sec) => (
-                      <button
-                        key={sec}
-                        type="button"
-                        onClick={() => setConfig((prev) => ({ ...prev, timerDurationSeconds: sec }))}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
-                          config.timerDurationSeconds === sec
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                            : 'bg-white text-slate-700 border-orange-200 hover:bg-orange-100'
-                        }`}
-                        id={`btn-timer-sec-${sec}`}
-                      >
-                        {sec} 秒
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500 font-medium">已關閉倒數計時，您可以不限時間安心思考作答。</p>
-              )}
+              <div className="bg-white/80 border border-indigo-200 rounded-xl p-2.5 flex items-center space-x-2 text-xs font-bold text-indigo-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>已啟用完整答題計時與成效分析</span>
+              </div>
             </div>
 
             {/* Answer Reveal Mode */}
             <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center space-x-2 text-slate-800 font-black mb-2">
-                  <Clock className="w-5 h-5 text-indigo-600" />
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
                   <span>解答顯示模式</span>
                 </div>
                 <p className="text-xs text-slate-600 font-medium mb-3">選擇要在選定後立即看解答衛教說明，或是在測驗結束後統一檢討：</p>
@@ -332,7 +305,7 @@ export const ConfigScreen: React.FC<ConfigScreenProps> = ({
               題數：<strong className="text-indigo-600 font-extrabold">{config.questionCount} 題</strong>
             </span>
             <span className="bg-white px-3.5 py-1.5 rounded-full border border-indigo-200 shadow-xs">
-              計時：<strong>{config.enableTimer ? `每題 ${config.timerDurationSeconds} 秒` : '無時間限制'}</strong>
+              計時：<strong className="text-emerald-700 font-extrabold">完整答題計時 (累計總時間)</strong>
             </span>
           </div>
 
